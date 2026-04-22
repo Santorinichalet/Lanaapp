@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>طلب صيانة - IBSC</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#172033;
+      --muted:#6b7280;
+      --primary:#1f6feb;
+      --primary-dark:#1357c5;
+      --border:#e5e7eb;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --danger:#d92d20;
+      --success:#117a37;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Tahoma, Arial, sans-serif;
+      background:linear-gradient(180deg,#eef4ff 0%, var(--bg) 100%);
+      color:var(--text);
+    }
+    .wrap{max-width:840px;margin:32px auto;padding:16px;}
+    .card{
+      background:var(--card);border:1px solid var(--border);border-radius:22px;
+      box-shadow:var(--shadow);overflow:hidden;
+    }
+    .head{
+      padding:24px;background:linear-gradient(135deg,#1f6feb 0%, #4f8ef7 100%);color:white;
+    }
+    .logo-box{display:flex;justify-content:flex-start;align-items:center;margin-bottom:14px;direction:ltr;}
+    .logo-box img{height:110px;max-width:260px;object-fit:contain;background:#fff;border-radius:16px;padding:10px;box-shadow:0 8px 22px rgba(0,0,0,.14);}
+    .head h1{margin:0 0 8px 0;font-size:28px;}
+    .head p{margin:0;opacity:.95;line-height:1.9;}
+    form{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+    .field{display:flex;flex-direction:column;gap:8px;}
+    .field.full{grid-column:1/-1}
+    label{font-weight:700;font-size:14px;}
+    input, select, textarea{
+      width:100%;border:1px solid var(--border);border-radius:14px;padding:13px 14px;
+      font-size:15px;background:white;outline:none;transition:.2s;
+    }
+    input:focus, select:focus, textarea:focus{
+      border-color:var(--primary);box-shadow:0 0 0 4px rgba(31,111,235,.12);
+    }
+    textarea{min-height:130px;resize:vertical;line-height:1.8;}
+    .hint{color:var(--muted);font-size:13px;line-height:1.6;}
+    .actions{grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+    button{
+      border:none;border-radius:14px;padding:14px 18px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;
+    }
+    .primary{background:var(--primary);color:white;}
+    .primary:hover{background:var(--primary-dark)}
+    .secondary{background:#eef2ff;color:#243b6b;}
+    .status{margin:0 24px 24px;padding:14px 16px;border-radius:14px;display:none;font-weight:700;}
+    .status.ok{display:block;background:#ecfdf3;color:var(--success);border:1px solid #c7eed8;}
+    .status.err{display:block;background:#fef3f2;color:var(--danger);border:1px solid #f7c9c5;}
+    .preview{margin-top:10px;display:none;max-width:220px;max-height:220px;border-radius:16px;border:1px solid var(--border);}
+    .service-types{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+    .service-card{
+      border:1px solid var(--border);border-radius:18px;padding:16px 10px;background:#fff;
+      text-align:center;cursor:pointer;transition:.2s;box-shadow:0 6px 16px rgba(0,0,0,.04);
+    }
+    .service-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,.08)}
+    .service-card.active{border-color:var(--primary);background:#eef4ff;box-shadow:0 0 0 3px rgba(31,111,235,.10)}
+    .service-icon{font-size:34px;line-height:1;margin-bottom:10px}
+    .service-label{font-size:15px;font-weight:700;line-height:1.5}
+    @media (max-width:720px){
+      .service-types{grid-template-columns:repeat(2,1fr)}
+    }
+    .map-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
+    .map-card{width:min(94vw,840px);background:#fff;border-radius:18px;padding:12px;box-shadow:0 16px 40px rgba(0,0,0,.18);border:1px solid var(--border)}
+    #map{width:100%;height:420px;border-radius:14px}
+    .map-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .coords-hint{color:var(--muted);font-size:13px}
+    @media (max-width:720px){form{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="head">
+        <div class="logo-box"><img src="https://i.ibb.co/bM7q7dJJ/Screenshot-20260214-214728-Instagram.jpg" alt="شعار الشركة"></div>
+        <h1>طلب صيانة</h1>
+        <p>اختر البناية والشقة، ثم أدخل بياناتك ووصف الخدمة المطلوبة. يمكن إرفاق صورة للمشكلة قبل إرسال الطلب.<br>الرجاء طلب الفاتورة والإحتفاظ فيها.</p>
+      </div>
+
+      <form id="requestForm">
+        <div class="field">
+          <label for="building">اسم البناية أو الموقع</label>
+          <input id="building" type="text" placeholder="اكتب اسم البناية أو الموقع" required />
+          <div class="actions" style="grid-column:auto;margin-top:6px">
+            <button type="button" class="secondary" id="pickOnMapBtn">اختيار الموقع من الخريطة</button>
+            <button type="button" class="secondary" id="detectLocationBtn">استخدام موقعي الحالي</button>
+          </div>
+          <div id="buildingLockNote" class="hint" style="display:none">تم تحديد البناية تلقائيًا من رمز QR ولا يمكن تغييرها.</div>
+          <div id="locationHint" class="hint" style="display:none"></div>
+        </div>
+
+        <div class="field">
+          <label for="apartment">رقم الشقة</label>
+          <input id="apartment" type="text" placeholder="اكتب رقم الشقة" required />
+        </div>
+
+        <div class="field">
+          <label for="name">اسم العميل</label>
+          <input id="name" type="text" placeholder="اكتب الاسم" required />
+        </div>
+
+        <div class="field">
+          <label for="phone">رقم الهاتف</label>
+          <input id="phone" type="tel" placeholder="مثال: 9xxxxxxx" required />
+        </div>
+
+        <div class="field full">
+          <label for="preferredTime">الوقت المناسب للتصليح</label>
+          <input id="preferredTime" type="text" placeholder="اكتب الوقت المناسب للتصليح" />
+        </div>
+
+        <div class="field full">
+          <label>اختر نوع الخدمة</label>
+          <div class="service-types">
+            <div class="service-card" data-service="سباكة">
+              <div class="service-icon">🚰</div>
+              <div class="service-label">سباكة</div>
+            </div>
+            <div class="service-card" data-service="كهرباء">
+              <div class="service-icon">⚡</div>
+              <div class="service-label">كهرباء</div>
+            </div>
+            <div class="service-card" data-service="تصليح المكيفات">
+              <div class="service-icon">❄️</div>
+              <div class="service-label">تصليح المكيفات</div>
+            </div>
+            <div class="service-card" data-service="مكافحة الحشرات">
+              <div class="service-icon">🪳</div>
+              <div class="service-label">مكافحة الحشرات</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label for="service">التفاصيل</label>
+          <textarea id="service" placeholder="اكتب تفاصيل الطلب هنا..." required></textarea>
+        </div>
+
+        <div class="field full">
+          <label for="image">إرفاق صورة</label>
+          <input id="image" type="file" accept="image/*" />
+          <img id="preview" class="preview" alt="معاينة الصورة" />
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="primary">إرسال الطلب</button>
+          <button type="button" class="secondary" id="clearBtn">مسح الحقول</button>
+        </div>
+      </form>
+
+      <div id="status" class="status"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDej24Pcn7UiqDTziS_IaZ5i6_8QDyPKO4",
+      authDomain: "lana-32ee1.firebaseapp.com",
+      projectId: "lana-32ee1",
+      storageBucket: "lana-32ee1.firebasestorage.app",
+      messagingSenderId: "245112627495",
+      appId: "1:245112627495:web:946e0da6e52084ca028902"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const COLLECTION_NAME = "maintenanceRequests";
+    const BUILDINGS_COLLECTION = "maintenanceBuildings";
+
+    const staticBuildings = [];
+
+    const buildingInput = document.getElementById("building");
+    const apartmentInput = document.getElementById("apartment");
+    const form = document.getElementById("requestForm");
+    const statusBox = document.getElementById("status");
+    const imageInput = document.getElementById("image");
+    const preview = document.getElementById("preview");
+    const clearBtn = document.getElementById("clearBtn");
+    const buildingLockNote = document.getElementById("buildingLockNote");
+    const detectLocationBtn = document.getElementById("detectLocationBtn");
+    const pickOnMapBtn = document.getElementById("pickOnMapBtn");
+    const useMyLocationBtn = document.getElementById("useMyLocationBtn");
+    const confirmLocationBtn = document.getElementById("confirmLocationBtn");
+    const closeMapBtn = document.getElementById("closeMapBtn");
+    const mapModal = document.getElementById("mapModal");
+    const pickedCoords = document.getElementById("pickedCoords");
+    const locationHint = document.getElementById("locationHint");
+    const serviceTextarea = document.getElementById("service");
+    const serviceCards = Array.from(document.querySelectorAll(".service-card"));
+    let selectedServiceType = "";
+    let selectedLat = null;
+    let selectedLng = null;
+    let map, marker, lastLatLng = null;
+
+    const buildingCodeMap = {};
+
+    function renderStaticBuildings(){
+      // لا حاجة لعرض قائمة هنا، ولكن نستخدم الأسماء للمطابقة مع QR
+    }
+
+    async function syncBuildingsToFirebase(){
+      // تم إيقاف مزامنة البنايات المخزنة/الافتراضية حتى تبدأ الشركة بقائمة نظيفة.
+      return;
+    }
+
+    function applyBuildingFromUrl(){
+      const params = new URLSearchParams(window.location.search);
+      const code = (params.get("b") || "").trim().toLowerCase();
+      if(!code || !buildingCodeMap[code]) return;
+
+      buildingInput.value = buildingCodeMap[code];
+      buildingInput.readOnly = true;
+      buildingInput.style.background = "#eef2ff";
+      buildingInput.style.cursor = "not-allowed";
+      if (buildingLockNote) buildingLockNote.style.display = "block";
+      if (detectLocationBtn) detectLocationBtn.style.display = "none";
+      if (pickOnMapBtn) pickOnMapBtn.style.display = "none";
+      if (locationHint) locationHint.style.display = "none";
+    }
+
+    async function loadBuildings(){
+      renderStaticBuildings();
+      applyBuildingFromUrl();
+      syncBuildingsToFirebase();
+    }
+
+    imageInput.addEventListener("change", ()=>{
+      const file = imageInput.files[0];
+      if(!file){
+        preview.style.display = "none";
+        preview.removeAttribute("src");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e=>{
+        preview.src = e.target.result;
+        preview.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    });
+
+    clearBtn.addEventListener("click", ()=>{
+      const lockedByQr = buildingInput.readOnly;
+      form.reset();
+      preview.style.display = "none";
+      preview.removeAttribute("src");
+      statusBox.className = "status";
+      statusBox.textContent = "";
+      selectedServiceType = "";
+      selectedLat = null;
+      selectedLng = null;
+      lastLatLng = null;
+      serviceCards.forEach(card => card.classList.remove("active"));
+
+      if (lockedByQr) {
+        applyBuildingFromUrl();
+      } else if (locationHint) {
+        locationHint.style.display = "none";
+        locationHint.textContent = "";
+      }
+    });
+
+    serviceCards.forEach(card => {
+      card.addEventListener("click", () => {
+        selectedServiceType = card.dataset.service || "";
+        serviceCards.forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+
+        const current = serviceTextarea.value.trim();
+        if (!current || current === selectedServiceType || current.startsWith(selectedServiceType + " - ")) {
+          serviceTextarea.value = selectedServiceType + " - ";
+        } else if (!current.includes(selectedServiceType)) {
+          serviceTextarea.value = selectedServiceType + " - " + current;
+        }
+        serviceTextarea.focus();
+      });
+    });
+
+    function openMapModal(){
+      mapModal.style.display = "flex";
+      setTimeout(() => {
+        if (!map) {
+          map = L.map('map');
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+          map.setView([23.5880, 58.3829], 12);
+          tryLocateAndDraw();
+          map.on('click', (e) => setMarker(e.latlng));
+        }
+        setTimeout(() => map.invalidateSize(), 60);
+      }, 0);
+    }
+
+    function closeMapModal(){
+      mapModal.style.display = "none";
+    }
+
+    function tryLocateAndDraw(){
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const userLatLng = [pos.coords.latitude, pos.coords.longitude];
+        map.setView(userLatLng, 15);
+        const blueIcon = L.divIcon({
+          html: '<div style="width:20px;height:20px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 6px rgba(66,133,244,0.8);"></div>',
+          className: ""
+        });
+        L.marker(userLatLng, { icon: blueIcon }).addTo(map).bindPopup("موقعي الحالي");
+        L.circle(userLatLng, { radius: 120, color: "#4285F4", fillColor: "#4285F4", fillOpacity: 0.2 }).addTo(map);
+      }, () => {});
+    }
+
+    function setMarker(latlng){
+      lastLatLng = latlng;
+      if (!marker) {
+        marker = L.marker(latlng, { draggable: true }).addTo(map);
+        marker.on('dragend', () => {
+          lastLatLng = marker.getLatLng();
+          updatePickedCoordsText();
+        });
+      } else {
+        marker.setLatLng(latlng);
+      }
+      updatePickedCoordsText();
+    }
+
+    function updatePickedCoordsText(){
+      if (!lastLatLng) return;
+      pickedCoords.textContent = `الموقع المحدد: ${lastLatLng.lat.toFixed(6)}, ${lastLatLng.lng.toFixed(6)}`;
+    }
+
+    function applyLocation(lat, lng){
+      selectedLat = Number(lat).toFixed(6);
+      selectedLng = Number(lng).toFixed(6);
+      if (!buildingInput.value.trim()) {
+        buildingInput.value = "موقعي الحالي";
+      }
+      locationHint.style.display = "block";
+      locationHint.textContent = `تم تحديد الموقع: ${selectedLat}, ${selectedLng}`;
+    }
+
+    if (pickOnMapBtn) {
+      pickOnMapBtn.addEventListener("click", openMapModal);
+    }
+    if (closeMapBtn) {
+      closeMapBtn.addEventListener("click", closeMapModal);
+    }
+    if (confirmLocationBtn) {
+      confirmLocationBtn.addEventListener("click", () => {
+        if (!lastLatLng) {
+          alert("اضغط على الخريطة لتحديد الموقع.");
+          return;
+        }
+        applyLocation(lastLatLng.lat, lastLatLng.lng);
+        closeMapModal();
+      });
+    }
+    if (useMyLocationBtn) {
+      useMyLocationBtn.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+          alert("المتصفح لا يدعم تحديد الموقع.");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            if (map) {
+              map.setView([lat, lng], 16);
+              setMarker({lat, lng});
+            }
+            applyLocation(lat, lng);
+            closeMapModal();
+          },
+          () => {
+            alert("تعذر الحصول على الموقع.");
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    }
+    if (detectLocationBtn) {
+      detectLocationBtn.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+          locationHint.style.display = "block";
+          locationHint.textContent = "المتصفح لا يدعم تحديد الموقع.";
+          return;
+        }
+        locationHint.style.display = "block";
+        locationHint.textContent = "جاري تحديد الموقع...";
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            applyLocation(position.coords.latitude, position.coords.longitude);
+          },
+          () => {
+            locationHint.textContent = "تعذر تحديد الموقع. اكتب اسم البناية أو الموقع يدويًا.";
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    }
+
+    serviceCards.forEach(card => {
+      card.addEventListener("click", () => {
+        selectedServiceType = card.dataset.service || "";
+        serviceCards.forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+
+        const current = serviceTextarea.value.trim();
+        if (!current || current === selectedServiceType || current.startsWith(selectedServiceType + " - ")) {
+          serviceTextarea.value = selectedServiceType + " - ";
+        } else if (!current.includes(selectedServiceType)) {
+          serviceTextarea.value = selectedServiceType + " - " + current;
+        }
+        serviceTextarea.focus();
+      });
+    });
+
+    async function uploadImageIfAny(file, requestId){
+      if(!file) return "";
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const safeExt = ext.replace(/[^a-z0-9]/g, "") || "jpg";
+      const storageRef = ref(storage, `maintenance/${requestId}.${safeExt}`);
+      await uploadBytes(storageRef, file);
+      return await getDownloadURL(storageRef);
+    }
+
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      statusBox.className = "status";
+      statusBox.textContent = "";
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = "جاري الإرسال...";
+
+      try{
+        const requestId = Date.now().toString();
+        const file = imageInput.files[0];
+        const imageUrl = await uploadImageIfAny(file, requestId);
+
+        await addDoc(collection(db, COLLECTION_NAME), {
+          requestId,
+          building: buildingInput.value.trim(),
+          apartment: apartmentInput.value.trim(),
+          customerName: document.getElementById("name").value.trim(),
+          phone: document.getElementById("phone").value.trim(),
+          preferredTime: document.getElementById("preferredTime").value.trim(),
+          serviceType: selectedServiceType || "",
+          service: document.getElementById("service").value.trim(),
+          locationText: buildingInput.value.trim(),
+          locationLat: selectedLat || "",
+          locationLng: selectedLng || "",
+          imageUrl,
+          createdAt: new Date().toISOString(),
+          status: "جديد",
+          invoiceIssued: false,
+          amount: 0
+        });
+
+        form.reset();
+        preview.style.display = "none";
+        preview.removeAttribute("src");
+
+        statusBox.className = "status ok";
+        statusBox.textContent = "تم إرسال طلب الصيانة بنجاح.";
+      }catch(err){
+        console.error(err);
+        statusBox.className = "status err";
+        statusBox.textContent = "حدث خطأ أثناء إرسال الطلب. تأكد من قواعد Firestore وStorage.";
+      }finally{
+        submitBtn.disabled = false;
+        submitBtn.textContent = "إرسال الطلب";
+      }
+    });
+
+    loadBuildings();
+  </script>
+  <div class="map-backdrop" id="mapModal" aria-hidden="true">
+    <div class="map-card">
+      <div id="map"></div>
+      <div class="map-actions">
+        <button type="button" class="secondary" id="useMyLocationBtn">📍 استخدام موقعي الحالي</button>
+        <button type="button" class="primary" id="confirmLocationBtn">تأكيد الموقع</button>
+        <button type="button" class="secondary" id="closeMapBtn">إغلاق</button>
+        <span class="coords-hint" id="pickedCoords"></span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
