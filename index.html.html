@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>سِراج · متابعة الحفظ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ECEEE8; --surface:#FFFFFF; --sunk:#F5F6F2;
+  --ink:#1B2B26; --ink2:#53635C; --ink3:#8A968F;
+  --line:#D6DBD3; --line2:#E7EAE4;
+  --verd:#2E6B5E; --verd-d:#1F4E44; --verd-soft:#DCE8E3;
+  --brass:#A8762C; --brass-soft:#F0E4CE;
+  --alert:#A33B2E; --alert-soft:#F3E1DD;
+  --r:14px; --r-s:9px;
+  --ui:"IBM Plex Sans Arabic",system-ui,sans-serif;
+  --dis:"Amiri",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--paper); color:var(--ink); font-family:var(--ui);
+  font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:var(--verd)}
+.hide{display:none !important}
+
+/* ---------- shell ---------- */
+#app{max-width:760px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.topbar{
+  display:flex;align-items:center;gap:12px;padding:14px 18px 12px;
+  background:var(--paper);position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line);
+}
+.brand{font-family:var(--dis);font-size:25px;font-weight:700;letter-spacing:.5px;line-height:1}
+.topbar .who{margin-inline-start:auto;font-size:12.5px;color:var(--ink2);text-align:end;line-height:1.35}
+.topbar .who b{display:block;font-weight:600;color:var(--ink);font-size:13.5px}
+.linkbtn{font-size:12.5px;color:var(--verd);font-weight:600}
+main{flex:1;padding:18px 16px 90px}
+.tabs{display:flex;gap:4px;padding:0 16px 14px;background:var(--paper);position:sticky;top:52px;z-index:19}
+.tabs button{
+  flex:1;padding:9px 6px;border-radius:99px;font-size:13.5px;font-weight:600;color:var(--ink2);
+}
+.tabs button[aria-current="true"]{background:var(--ink);color:var(--paper)}
+
+/* ---------- pieces ---------- */
+.card{background:var(--surface);border:1px solid var(--line2);border-radius:var(--r);padding:16px}
+.card + .card{margin-top:12px}
+.h{font-family:var(--dis);font-size:22px;font-weight:700;line-height:1.3}
+.sub{color:var(--ink2);font-size:13px}
+.muted{color:var(--ink3)}
+.row{display:flex;align-items:center;gap:10px}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.num{font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
+  padding:3px 9px;border-radius:99px;background:var(--sunk);color:var(--ink2)}
+.chip.warn{background:var(--alert-soft);color:var(--alert)}
+.chip.good{background:var(--verd-soft);color:var(--verd-d)}
+.chip.gold{background:var(--brass-soft);color:var(--brass)}
+.btn{background:var(--verd);color:#fff;border-radius:var(--r-s);padding:11px 18px;font-weight:600;font-size:14.5px}
+.btn:disabled{opacity:.45}
+.btn.ghost{background:var(--sunk);color:var(--ink)}
+.btn.line{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.full{display:block;width:100%;text-align:center}
+.field{display:block;margin-bottom:12px}
+.field span{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:5px;font-weight:500}
+.field input,.field select,.field textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-s);
+  background:var(--surface);font-size:15px}
+.field input:focus,.field select:focus,.btn:focus-visible,button:focus-visible{
+  outline:2px solid var(--verd);outline-offset:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.empty{text-align:center;padding:34px 18px;color:var(--ink2)}
+.empty .h{margin-bottom:6px}
+.sep{height:1px;background:var(--line2);margin:14px -16px}
+
+/* ---------- student rows (teacher) ---------- */
+.slist{background:var(--surface);border:1px solid var(--line2);border-radius:var(--r);overflow:hidden}
+.srow{display:flex;align-items:center;gap:12px;width:100%;padding:14px 15px;text-align:start;
+  border-bottom:1px solid var(--line2)}
+.srow:last-child{border-bottom:none}
+.srow:active{background:var(--sunk)}
+.srow .dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex:none}
+.srow.done .dot{background:var(--verd)}
+.srow .nm{font-weight:600;font-size:15.5px}
+.srow .nx{font-size:12.5px;color:var(--ink2);margin-top:1px}
+.srow .meta{margin-inline-start:auto;text-align:end;flex:none;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+
+/* ---------- juz ribbon (hero) ---------- */
+.ribbon{display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin:14px 0 10px;direction:rtl}
+.jz{position:relative;height:44px;border-radius:4px;background:var(--sunk);overflow:hidden;
+  border:1px solid var(--line2)}
+.jz i{position:absolute;inset-inline:0;bottom:0;background:var(--verd);display:block;height:0;
+  transition:height .9s cubic-bezier(.2,.7,.3,1)}
+.jz b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}
+.jz.full i{background:var(--verd-d)}
+.jz.full b{color:var(--paper)}
+.jz.due::after{content:"";position:absolute;top:3px;inset-inline-end:3px;width:5px;height:5px;
+  border-radius:50%;background:var(--alert)}
+@media (prefers-reduced-motion:reduce){.jz i{transition:none}}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--ink3);flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:2px;display:block}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.stat{background:var(--sunk);border-radius:var(--r-s);padding:11px 12px}
+.stat .v{font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat .k{font-size:11.5px;color:var(--ink2);margin-top:1px}
+.bars{display:flex;align-items:flex-end;gap:5px;height:60px;margin:12px 0 6px}
+.bars div{flex:1;background:var(--verd-soft);border-radius:3px 3px 0 0;min-height:3px;position:relative}
+.bars div.now{background:var(--verd)}
+.barlabels{display:flex;gap:5px;font-size:10.5px;color:var(--ink3)}
+.barlabels span{flex:1;text-align:center}
+
+/* ---------- segment list ---------- */
+.seg{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line2)}
+.seg:last-child{border-bottom:none}
+.seg .t{font-family:var(--dis);font-size:17px;font-weight:700}
+.seg .d{font-size:12px;color:var(--ink2)}
+.seg .r{margin-inline-start:auto;text-align:end;flex:none}
+
+/* ---------- sheet ---------- */
+.scrim{position:fixed;inset:0;background:rgba(20,32,28,.45);z-index:40;display:flex;align-items:flex-end;
+  justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:760px;border-radius:18px 18px 0 0;
+  padding:18px 18px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;
+  animation:up .22s ease}
+@keyframes up{from{transform:translateY(22px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.sheet h3{font-family:var(--dis);font-size:24px;font-weight:700;line-height:1.25}
+.grab{width:38px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 14px}
+.rate{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.rate button{padding:14px 6px;border-radius:var(--r-s);border:1.5px solid var(--line);
+  font-weight:600;font-size:14px;background:var(--surface);line-height:1.3}
+.rate button .e{display:block;font-size:11px;font-weight:500;color:var(--ink3);margin-top:2px}
+.rate button[data-sel="1"]{border-color:var(--verd);background:var(--verd-soft);color:var(--verd-d)}
+.rate button[data-sel="1"] .e{color:var(--verd-d)}
+.queue{background:var(--sunk);border-radius:var(--r-s);padding:12px;margin-top:12px}
+.qitem{display:flex;align-items:center;gap:9px;padding:7px 0}
+.qitem label{flex:1;font-family:var(--dis);font-size:16px;font-weight:700}
+.qitem .ov{font-size:11.5px;color:var(--alert);font-weight:600;font-family:var(--ui)}
+.qitem select{padding:5px 7px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff}
+.toast{position:fixed;bottom:22px;inset-inline:0;margin:auto;width:max-content;max-width:88%;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:99px;font-size:13.5px;
+  z-index:60;box-shadow:0 6px 20px rgba(20,40,34,.25)}
+
+/* ---------- login ---------- */
+.login{max-width:380px;margin:0 auto;padding:10vh 20px 40px;text-align:center}
+.login .brand{font-size:44px;margin-bottom:2px}
+.login p{color:var(--ink2);font-size:14px;margin-bottom:26px;line-height:1.7}
+.login .card{text-align:start}
+.banner{background:var(--brass-soft);color:#6B4A16;font-size:12.5px;padding:9px 14px;text-align:center}
+@media(max-width:420px){
+  .ribbon{grid-template-columns:repeat(10,1fr)}
+  .stats{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+/* ==========================================================================
+   سِراج — متابعة حفظ القرآن للحلقات
+   ملف واحد. عدّل FIREBASE_CONFIG بمعلومات مشروعك ثم ارفعه على Hosting.
+   إن تركته فارغاً يعمل التطبيق في وضع تجريبي ببيانات وهمية داخل الذاكرة.
+   ========================================================================== */
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA8ovxv3cGURJ_6XSbf3ICoMOPHDHLM9Sc",
+  authDomain: "cced-74ca6.firebaseapp.com",
+  projectId: "cced-74ca6",
+  storageBucket: "cced-74ca6.firebasestorage.app",
+  messagingSenderId: "940577322588",
+  appId: "1:940577322588:web:86030574b4621973e55899"
+};
+
+/* فترات المراجعة بالأيام حسب مستوى الإتقان */
+const INTERVALS = [1, 3, 7, 15, 30, 60];
+/* يُعتبر الطفل متعثراً إذا نزل معدله عن هذه النسبة من متوسطه الشخصي أسبوعين متتاليين */
+const SLOWDOWN_RATIO = 0.5;
+
+/* ===================== بيانات المصحف ===================== */
+const SURAHS = [
+["الفاتحة",7],["البقرة",286],["آل عمران",200],["النساء",176],["المائدة",120],["الأنعام",165],
+["الأعراف",206],["الأنفال",75],["التوبة",129],["يونس",109],["هود",123],["يوسف",111],
+["الرعد",43],["إبراهيم",52],["الحجر",99],["النحل",128],["الإسراء",111],["الكهف",110],
+["مريم",98],["طه",135],["الأنبياء",112],["الحج",78],["المؤمنون",118],["النور",64],
+["الفرقان",77],["الشعراء",227],["النمل",93],["القصص",88],["العنكبوت",69],["الروم",60],
+["لقمان",34],["السجدة",30],["الأحزاب",73],["سبأ",54],["فاطر",45],["يس",83],
+["الصافات",182],["ص",88],["الزمر",75],["غافر",85],["فصلت",54],["الشورى",53],
+["الزخرف",89],["الدخان",59],["الجاثية",37],["الأحقاف",35],["محمد",38],["الفتح",29],
+["الحجرات",18],["ق",45],["الذاريات",60],["الطور",49],["النجم",62],["القمر",55],
+["الرحمن",78],["الواقعة",96],["الحديد",29],["المجادلة",22],["الحشر",24],["الممتحنة",13],
+["الصف",14],["الجمعة",11],["المنافقون",11],["التغابن",18],["الطلاق",12],["التحريم",12],
+["الملك",30],["القلم",52],["الحاقة",52],["المعارج",44],["نوح",28],["الجن",28],
+["المزمل",20],["المدثر",56],["القيامة",40],["الإنسان",31],["المرسلات",50],["النبأ",40],
+["النازعات",46],["عبس",42],["التكوير",29],["الانفطار",19],["المطففين",36],["الانشقاق",25],
+["البروج",22],["الطارق",17],["الأعلى",19],["الغاشية",26],["الفجر",30],["البلد",20],
+["الشمس",15],["الليل",21],["الضحى",11],["الشرح",8],["التين",8],["العلق",19],
+["القدر",5],["البينة",8],["الزلزلة",8],["العاديات",11],["القارعة",11],["التكاثر",8],
+["العصر",3],["الهمزة",9],["الفيل",5],["قريش",4],["الماعون",7],["الكوثر",3],
+["الكافرون",6],["النصر",3],["المسد",5],["الإخلاص",4],["الفلق",5],["الناس",6]
+];
+/* بداية كل جزء: [رقم السورة، رقم الآية] */
+const JUZ_START = [[1,1],[2,142],[2,253],[3,92],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],
+[9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],
+[29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1]];
+
+const OFFSET = (() => { let t = 0, a = []; for (const s of SURAHS) { a.push(t); t += s[1]; } return a; })();
+const TOTAL_AYAHS = OFFSET[113] + SURAHS[113][1];           // 6236
+const gAyah = (s, a) => OFFSET[s - 1] + a;                   // ترقيم متصل للآية
+const JUZ_G = JUZ_START.map(([s, a]) => gAyah(s, a));
+const juzOf = g => { let j = 1; for (let i = 0; i < 30; i++) if (g >= JUZ_G[i]) j = i + 1; return j; };
+const juzRange = j => [JUZ_G[j - 1], (j < 30 ? JUZ_G[j] - 1 : TOTAL_AYAHS)];
+const surahName = s => SURAHS[s - 1][0];
+const segTitle = x => `${surahName(x.surah)} ${x.from}${x.to > x.from ? "–" + x.to : ""}`;
+
+/* ===================== أدوات عامة ===================== */
+const DAY = 864e5;
+const todayKey = (d = new Date()) => d.toISOString().slice(0, 10);
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / DAY);
+const addDays = (k, n) => todayKey(new Date(new Date(k).getTime() + n * DAY));
+const AR_DAYS = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const fmtDate = k => { const d = new Date(k); return `${AR_DAYS[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`; };
+const ago = k => { const n = daysBetween(k, todayKey());
+  return n === 0 ? "اليوم" : n === 1 ? "أمس" : n < 7 ? `قبل ${n} أيام` : n < 30 ? `قبل ${Math.floor(n / 7)} أسابيع` : `قبل ${Math.floor(n / 30)} أشهر`; };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const el = h => { const d = document.createElement("div"); d.innerHTML = h.trim(); return d.firstElementChild; };
+function toast(msg) {
+  document.querySelector(".toast")?.remove();
+  const t = el(`<div class="toast">${esc(msg)}</div>`);
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+
+/* ===================== منطق المراجعة المتباعدة ===================== */
+function applyRating(seg, rating, dateKey) {
+  const s = { ...seg };
+  if (rating === "excellent") s.level = Math.min(s.level + 1, INTERVALS.length - 1);
+  else if (rating === "repeat") { s.level = 0; s.lapses = (s.lapses || 0) + 1; }
+  s.lastReview = dateKey;
+  s.nextReview = addDays(dateKey, INTERVALS[s.level]);
+  s.reviews = (s.reviews || 0) + 1;
+  return s;
+}
+const isDue = (seg, k = todayKey()) => seg.nextReview <= k;
+const overdueDays = (seg, k = todayKey()) => Math.max(0, daysBetween(seg.nextReview, k));
+/* المقطع الضعيف: تكرر فيه الإخفاق أو تأخر عن موعده أكثر من ضعف فترته */
+const isWeak = seg => (seg.lapses || 0) >= 2 || overdueDays(seg) > INTERVALS[seg.level] * 2;
+
+/* اتجاه الحفظ: يستنتجه من ترتيب ما حُفظ فعلاً، لأن أكثر الحلقات تبدأ من الناس صعوداً
+   بينما بعضها يبدأ من الفاتحة. 1 = تصاعدي برقم السورة، -1 = تنازلي. */
+function memDirection(segs) {
+  if (segs.length < 2) return -1;
+  const s = [...segs].sort((a, b) => a.firstDate.localeCompare(b.firstDate));
+  const a = s[0], b = s[s.length - 1];
+  if (b.surah !== a.surah) return b.surah > a.surah ? 1 : -1;
+  return b.from >= a.from ? 1 : -1;
+}
+/* المقطع التالي: يكمل السورة الحالية إلى آخرها ثم ينتقل للسورة التي تليها في اتجاه الحفظ،
+   بطول يقارب متوسط مقاطع الطفل السابقة. */
+function nextSuggested(segs) {
+  if (!segs.length) return { surah: 114, from: 1, to: SURAHS[113][1] };
+  const span = Math.max(3, Math.min(10,
+    Math.round(segs.reduce((n, s) => n + (s.to - s.from + 1), 0) / segs.length)));
+  const dir = memDirection(segs);
+  const edge = dir === 1 ? Math.max(...segs.map(s => s.surah)) : Math.min(...segs.map(s => s.surah));
+  const maxTo = Math.max(...segs.filter(s => s.surah === edge).map(s => s.to));
+  let surah = edge, from = maxTo + 1;
+  if (from > SURAHS[surah - 1][1]) {
+    const nxt = dir === 1 ? surah + 1 : surah - 1;
+    if (nxt < 1 || nxt > 114) return { surah, from: SURAHS[surah - 1][1], to: SURAHS[surah - 1][1] };
+    surah = nxt; from = 1;
+  }
+  return { surah, from, to: Math.min(from + span - 1, SURAHS[surah - 1][1]) };
+}
+
+/* ===================== طبقة البيانات ===================== */
+const LIVE = !!FIREBASE_CONFIG.apiKey && !/(\?|&)demo\b/.test(location.search);   // أضف ?demo للرابط لعرض الواجهة ببيانات وهمية
+const DB = { circles: [], students: [], segments: [], sessions: [], invites: [], users: [] };
+let fs = null, auth = null, F = null;
+
+async function initFirebase() {
+  const a = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js");
+  const s = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js");
+  const u = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js");
+  F = { ...s, ...u };
+  const app = a.initializeApp(FIREBASE_CONFIG);
+  // التخزين المحلي: يسمح بالعمل بلا إنترنت ثم المزامنة لاحقاً
+  fs = s.initializeFirestore(app, { localCache: s.persistentLocalCache({ tabManager: s.persistentMultipleTabManager() }) });
+  auth = u.getAuth(app);
+}
+const col = n => F.collection(fs, n);
+async function pull(name, field, value) {
+  const q = value === undefined ? col(name) : F.query(col(name), F.where(field, "==", value));
+  const snap = await F.getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+const Store = {
+  async loadScope(user) {
+    if (!LIVE) return;
+    if (user.role === "parent") {
+      DB.students = [];
+      for (const sid of user.studentIds || []) {
+        const d = await F.getDoc(F.doc(fs, "students", sid));
+        if (d.exists()) DB.students.push({ id: d.id, ...d.data() });
+      }
+    } else if (user.role === "teacher") {
+      DB.circles = await pull("circles", "teacherUid", user.uid);
+      DB.students = [];
+      for (const c of DB.circles) DB.students.push(...await pull("students", "circleId", c.id));
+    } else {
+      DB.circles = await pull("circles");
+      DB.students = await pull("students");
+      DB.users = await pull("users");
+      DB.invites = await pull("invites");
+    }
+    DB.segments = []; DB.sessions = [];
+    for (const st of DB.students) {
+      DB.segments.push(...await pull("segments", "studentId", st.id));
+      DB.sessions.push(...await pull("sessions", "studentId", st.id));
+    }
+  },
+  async put(name, obj) {
+    if (!LIVE) {
+      const arr = DB[name], i = arr.findIndex(x => x.id === obj.id);
+      if (i < 0) arr.push(obj); else arr[i] = obj;
+      return obj;
+    }
+    const { id, ...body } = obj;
+    await F.setDoc(F.doc(fs, name, id), body, { merge: true });
+    const arr = DB[name], i = arr.findIndex(x => x.id === id);
+    if (i < 0) arr.push(obj); else arr[i] = obj;
+    return obj;
+  },
+  async remove(name, id) {
+    if (LIVE) await F.deleteDoc(F.doc(fs, name, id));
+    DB[name] = DB[name].filter(x => x.id !== id);
+  }
+};
+
+/* ===================== مُحدِّدات ===================== */
+const segsOf = sid => DB.segments.filter(s => s.studentId === sid);
+const sessOf = sid => DB.sessions.filter(s => s.studentId === sid).sort((a, b) => b.date.localeCompare(a.date));
+const dueOf = sid => segsOf(sid).filter(s => isDue(s)).sort((a, b) => a.nextReview.localeCompare(b.nextReview));
+const ayahsOf = sid => segsOf(sid).reduce((n, s) => n + (s.to - s.from + 1), 0);
+const studentsIn = cid => DB.students.filter(s => s.circleId === cid && s.active !== false);
+
+/* آيات محفوظة خلال أسبوع يبدأ قبل w أسابيع من اليوم */
+function weekNew(sid, w) {
+  const end = addDays(todayKey(), -7 * w), start = addDays(end, -6);
+  return segsOf(sid).filter(s => s.firstDate >= start && s.firstDate <= end)
+    .reduce((n, s) => n + (s.to - s.from + 1), 0);
+}
+function paceReport(sid) {
+  const weeks = [...Array(8)].map((_, i) => weekNew(sid, 7 - i));   // من الأقدم للأحدث
+  const base = weeks.slice(0, 5).reduce((a, b) => a + b, 0) / 5;    // متوسط الأسابيع الخمسة السابقة
+  const recent = weeks.slice(5).reduce((a, b) => a + b, 0) / 3;     // متوسط آخر ثلاثة أسابيع
+  return { weeks, avg: base, recent, slow: base > 0 && recent < base * SLOWDOWN_RATIO, now: weeks[7] };
+}
+function mistakeHotspots(sid, limit = 5) {
+  const m = new Map();
+  for (const s of sessOf(sid)) for (const a of s.mistakes || []) {
+    const k = s.surah + ":" + a; m.set(k, (m.get(k) || 0) + 1);
+  }
+  return [...m.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, limit)
+    .map(([k, n]) => ({ label: `${surahName(+k.split(":")[0])} ${k.split(":")[1]}`, n }));
+}
+function juzProgress(sid) {
+  const segs = segsOf(sid);
+  return [...Array(30)].map((_, i) => {
+    const [a, b] = juzRange(i + 1); const span = b - a + 1;
+    let done = 0, due = false;
+    for (const s of segs) {
+      const f = Math.max(a, gAyah(s.surah, s.from)), t = Math.min(b, gAyah(s.surah, s.to));
+      if (t >= f) { done += t - f + 1; if (isDue(s)) due = true; }
+    }
+    return { juz: i + 1, pct: Math.min(1, done / span), due };
+  });
+}
+
+/* ===================== بيانات تجريبية ===================== */
+function chunks(startSurah, n) {
+  const out = []; let s = startSurah, a = 1;
+  while (out.length < n && s >= 1) {
+    const total = SURAHS[s - 1][1];
+    const size = Math.min(4 + Math.floor(Math.random() * 4), total - a + 1);
+    out.push({ surah: s, from: a, to: a + size - 1 });
+    a += size;
+    if (a > total) { s--; a = 1; }
+  }
+  return out;
+}
+function seedDemo() {
+  DB.circles = [{ id: "c1", name: "حلقة المسجد — بعد العصر", teacherUid: "t1", teacherName: "الأستاذة نورة", days: [0, 1, 2, 3] }];
+  const kids = [
+    { id: "s1", name: "جمال", birthYear: 2016, pace: 20, discipline: .85, slow: false, count: 120 },
+    { id: "s2", name: "قيس", birthYear: 2018, pace: 26, discipline: .3,  slow: false, count: 95 },
+    { id: "s3", name: "جنان", birthYear: 2020, pace: 9, discipline: .75, slow: true, count: 34 }
+  ];
+  DB.students = kids.map(k => ({ id: k.id, name: k.name, birthYear: k.birthYear, circleId: "c1", parentUids: ["p1"], active: true }));
+  DB.segments = []; DB.sessions = [];
+  const R = n => Math.floor(Math.random() * n);
+  for (const k of kids) {
+    const list = chunks(114, k.count);
+    // جدول زمني ينتهي عند اليوم، مع تباطؤ في الربع الأخير لمن جعلناه متباطئاً
+    let day = 0; const offs = list.map(c => { day += (c.to - c.from + 1) / k.pace * 7; return day; });
+    const span = Math.ceil(day) + (k.slow ? 22 : 0);   // المتباطئ توقف تقدمه منذ ثلاثة أسابيع
+    list.forEach((c, i) => {
+      const len = c.to - c.from + 1;
+      const firstDate = addDays(todayKey(), -span + Math.round(offs[i]));
+      const steady = Math.random() < k.discipline;
+      const level = steady ? 1 + R(INTERVALS.length - 1) : R(3);
+      let back = steady ? R(INTERVALS[level] + 1) : INTERVALS[level] * (2 + R(3));
+      let lastReview = addDays(todayKey(), -back);
+      if (lastReview < firstDate) lastReview = firstDate;
+      const seg = { id: uid(), studentId: k.id, surah: c.surah, from: c.from, to: c.to,
+        firstDate, lastReview, level, lapses: steady ? 0 : 2 + R(2), reviews: 1 + R(6) };
+      seg.nextReview = addDays(lastReview, INTERVALS[level]);
+      DB.segments.push(seg);
+      DB.sessions.push({ id: uid(), studentId: k.id, circleId: "c1", date: firstDate, kind: "new",
+        surah: c.surah, from: c.from, to: c.to, rating: Math.random() > .3 ? "excellent" : "good",
+        mistakes: Math.random() > .75 ? [c.from + R(len)] : [], note: "", by: "الأستاذة نورة" });
+    });
+    // مواضع خطأ لاصقة: آيات متشابهة يتعثر فيها الطفل مراراً
+    const mine = DB.segments.filter(s => s.studentId === k.id);
+    for (let i = 0; i < 3 && mine.length; i++) {
+      const sg = mine[R(mine.length)], ay = sg.from + R(sg.to - sg.from + 1);
+      for (let j = 0; j < 2 + R(2); j++) DB.sessions.push({ id: uid(), studentId: k.id, circleId: "c1",
+        date: addDays(todayKey(), -(3 + R(40))), kind: "review", surah: sg.surah, from: sg.from, to: sg.to,
+        rating: "repeat", mistakes: [ay], note: "", by: "الأستاذة نورة" });
+    }
+  }
+  DB.users = [
+    { id: "t1", name: "الأستاذة نورة", role: "teacher" },
+    { id: "p1", name: "د. أبو جمال", role: "parent", studentIds: ["s1", "s2", "s3"] },
+    { id: "a1", name: "إدارة المدرسة", role: "admin" }
+  ];
+}
+
+/* ===================== الحالة والتوجيه ===================== */
+let ME = null, TAB = "";
+const app = document.getElementById("app");
+
+async function boot() {
+  if (LIVE) {
+    await initFirebase();
+    F.onAuthStateChanged(auth, async u => {
+      if (!u) { ME = null; renderLogin(); return; }
+      const d = await F.getDoc(F.doc(fs, "users", u.uid));
+      if (!d.exists()) { renderLogin("لم يُربط هذا الحساب بأي حلقة. اطلب رمز دعوة من المعلمة."); return; }
+      ME = { uid: u.uid, ...d.data() };
+      await Store.loadScope(ME);
+      start();
+    });
+  } else { seedDemo(); renderLogin(); }
+}
+
+function start() {
+  TAB = ME.role === "teacher" ? "today" : ME.role === "parent" ? "home" : "circles";
+  render();
+}
+
+function render() {
+  const tabs = ME.role === "teacher"
+    ? [["today", "حلقة اليوم"], ["students", "الطلاب"], ["report", "التقرير"]]
+    : ME.role === "parent"
+      ? [["home", "الأبناء"], ["review", "المراجعة"], ["log", "السجل"]]
+      : [["circles", "الحلقات"], ["home", "الأبناء"], ["review", "المراجعة"], ["people", "الحسابات"]];
+  app.innerHTML = `
+    ${LIVE ? "" : '<div class="banner">وضع تجريبي: البيانات وهمية ولا تُحفظ. أضف مفاتيح Firebase لتشغيله فعلياً.</div>'}
+    <div class="topbar">
+      <div class="brand">سِراج</div>
+      <div class="who"><b>${esc(ME.name)}</b>
+        <button class="linkbtn" id="out">خروج</button></div>
+    </div>
+    <div class="tabs">${tabs.map(([k, l]) => `<button data-tab="${k}" aria-current="${TAB === k}">${l}</button>`).join("")}</div>
+    <main id="view"></main>`;
+  app.querySelector("#out").onclick = signOut;
+  app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { TAB = b.dataset.tab; render(); });
+  const v = app.querySelector("#view");
+  ({ today: viewToday, students: viewStudents, report: viewTeacherReport,
+     home: viewParentHome, review: viewParentReview, log: viewParentLog,
+     circles: viewCircles, people: viewPeople })[TAB](v);
+}
+
+async function signOut() {
+  if (LIVE) await F.signOut(auth); else { ME = null; renderLogin(); }
+}
+
+/* ===================== الدخول ===================== */
+function renderLogin(msg) {
+  app.innerHTML = `
+    <div class="login">
+      <div class="brand">سِراج</div>
+      <p>متابعة حفظ الأبناء بين الحلقة والبيت</p>
+      ${msg ? `<div class="card" style="background:var(--alert-soft);border-color:var(--alert-soft);margin-bottom:12px">${esc(msg)}</div>` : ""}
+      <div class="card">
+        ${LIVE ? `
+        <label class="field"><span>البريد</span><input id="em" type="email" autocomplete="username"></label>
+        <label class="field"><span>كلمة المرور</span><input id="pw" type="password" autocomplete="current-password"></label>
+        <button class="btn full" id="go">دخول</button>
+        <div class="sep"></div>
+        <label class="field"><span>عندك رمز دعوة؟</span><input id="code" placeholder="مثال: 4KX9P2"></label>
+        <button class="btn ghost full" id="join">إنشاء حساب بالرمز</button>`
+        : `<div class="sub" style="margin-bottom:10px">اختر الدور لتجربة الواجهة</div>
+        <div style="display:grid;gap:8px">
+          <button class="btn full" data-demo="t1">دخول كمعلمة</button>
+          <button class="btn ghost full" data-demo="p1">دخول كولي أمر</button>
+          <button class="btn line full" data-demo="a1">دخول كإدارة</button>
+        </div>`}
+      </div>
+    </div>`;
+  if (!LIVE) app.querySelectorAll("[data-demo]").forEach(b => b.onclick = () => {
+    ME = { uid: b.dataset.demo, ...DB.users.find(u => u.id === b.dataset.demo) }; start();
+  });
+  else {
+    app.querySelector("#go").onclick = async () => {
+      try { await F.signInWithEmailAndPassword(auth, app.querySelector("#em").value.trim(), app.querySelector("#pw").value); }
+      catch (e) { toast("تعذر الدخول. تحقق من البريد وكلمة المرور."); }
+    };
+    app.querySelector("#join").onclick = () => redeem(app.querySelector("#code").value.trim().toUpperCase(), app.querySelector("#em").value.trim(), app.querySelector("#pw").value);
+  }
+}
+async function redeem(codeVal, email, pass) {
+  if (!codeVal || !email || pass.length < 6) return toast("أدخل الرمز والبريد وكلمة مرور من ٦ خانات فأكثر.");
+  const d = await F.getDoc(F.doc(fs, "invites", codeVal));
+  if (!d.exists() || d.data().used) return toast("الرمز غير صالح أو مستخدم.");
+  const inv = d.data();
+  const cred = await F.createUserWithEmailAndPassword(auth, email, pass);
+  await F.setDoc(F.doc(fs, "users", cred.user.uid), {
+    name: inv.name || email.split("@")[0], role: inv.role, inviteCode: codeVal,
+    studentIds: inv.studentIds || [], circleId: inv.circleId || null
+  });
+  await F.setDoc(F.doc(fs, "invites", codeVal), { used: true }, { merge: true });
+  toast("تم إنشاء الحساب.");
+}
+
+/* ===================== واجهة المعلمة ===================== */
+function viewToday(v) {
+  const circle = DB.circles[0] || { name: "الحلقة" };
+  const kids = studentsIn(circle.id);
+  const k = todayKey();
+  const done = kids.filter(s => sessOf(s.id).some(x => x.date === k)).length;
+  v.innerHTML = `
+    <div class="spread" style="margin-bottom:4px">
+      <div><div class="h">${esc(circle.name)}</div>
+        <div class="sub">${fmtDate(k)}</div></div>
+      <div class="chip ${done === kids.length && kids.length ? "good" : ""}">
+        <span class="num">${done}</span> من <span class="num">${kids.length}</span> سُمّعوا</div>
+    </div>
+    <div class="slist" style="margin-top:12px">
+      ${kids.map(s => {
+        const due = dueOf(s.id), late = due.filter(x => overdueDays(x) > 3).length;
+        const n = nextSuggested(segsOf(s.id));
+        const today = sessOf(s.id).some(x => x.date === k);
+        return `<button class="srow ${today ? "done" : ""}" data-s="${s.id}">
+          <span class="dot"></span>
+          <span><span class="nm">${esc(s.name)}</span>
+            <span class="nx">التالي: ${segTitle(n)}</span></span>
+          <span class="meta">
+            ${due.length ? `<span class="chip ${late ? "warn" : ""}"><span class="num">${due.length}</span> مراجعة</span>` : `<span class="chip good">لا مراجعة</span>`}
+            ${today ? `<span class="chip good">تم اليوم</span>` : ""}
+          </span></button>`;
+      }).join("") || `<div class="empty"><div class="h">لا يوجد طلاب</div><div class="sub">أضِفهم من حساب الإدارة.</div></div>`}
+    </div>
+    <button class="btn ghost full" id="wa" style="margin-top:14px">إرسال ملخص الأسبوع للأهالي</button>`;
+  v.querySelectorAll("[data-s]").forEach(b => b.onclick = () => openSession(b.dataset.s));
+  v.querySelector("#wa").onclick = () => shareSummary(kids);
+}
+
+function openSession(sid) {
+  const st = DB.students.find(x => x.id === sid);
+  const n = nextSuggested(segsOf(sid));
+  const due = dueOf(sid).slice(0, 6);
+  const scrim = el(`<div class="scrim"><div class="sheet">
+    <div class="grab"></div>
+    <h3>${esc(st.name)}</h3>
+    <div class="sub" style="margin-bottom:14px">${ayahsOf(sid)} آية محفوظة · آخر تسميع ${sessOf(sid)[0] ? ago(sessOf(sid)[0].date) : "—"}</div>
+
+    <div class="field"><span>الحفظ الجديد</span>
+      <div class="row">
+        <select id="su" style="flex:2;padding:10px;border:1px solid var(--line);border-radius:9px">
+          ${SURAHS.map((s, i) => `<option value="${i + 1}" ${i + 1 === n.surah ? "selected" : ""}>${s[0]}</option>`).join("")}
+        </select>
+        <input id="fr" type="number" min="1" value="${n.from}" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:9px;text-align:center">
+        <span class="muted">إلى</span>
+        <input id="to" type="number" min="1" value="${n.to}" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:9px;text-align:center">
+      </div></div>
+
+    <div class="rate" id="rate">
+      <button data-r="excellent" data-sel="1">متقن<span class="e">بلا تلقين</span></button>
+      <button data-r="good">جيد<span class="e">أخطاء يسيرة</span></button>
+      <button data-r="repeat">يحتاج إعادة<span class="e">يُعاد غداً</span></button>
+    </div>
+
+    <label class="field" style="margin-top:12px"><span>أرقام الآيات التي تعثّر فيها (اختياري)</span>
+      <input id="mis" inputmode="numeric" placeholder="مثال: ٤، ٧ — اكتبها بالأرقام الإنجليزية مفصولة بفاصلة"></label>
+
+    ${due.length ? `<div class="queue"><div class="sub" style="font-weight:600;color:var(--ink);margin-bottom:4px">المراجعة المستحقة اليوم</div>
+      ${due.map(s => `<div class="qitem" data-seg="${s.id}">
+        <label>${segTitle(s)}</label>
+        ${overdueDays(s) ? `<span class="ov">متأخر ${overdueDays(s)} يوم</span>` : ""}
+        <select><option value="">لم تُراجع</option><option value="excellent">متقن</option><option value="good">جيد</option><option value="repeat">يحتاج إعادة</option></select>
+      </div>`).join("")}</div>` : `<div class="queue sub">لا توجد مقاطع مستحقة للمراجعة اليوم.</div>`}
+
+    <div class="grid2" style="margin-top:16px">
+      <button class="btn" id="save">حفظ التسميع</button>
+      <button class="btn line" id="cancel">إلغاء</button>
+    </div>
+  </div></div>`);
+  document.body.appendChild(scrim);
+  let rating = "excellent";
+  scrim.querySelectorAll("#rate button").forEach(b => b.onclick = () => {
+    scrim.querySelectorAll("#rate button").forEach(x => x.removeAttribute("data-sel"));
+    b.dataset.sel = "1"; rating = b.dataset.r;
+  });
+  const close = () => scrim.remove();
+  scrim.querySelector("#cancel").onclick = close;
+  scrim.onclick = e => { if (e.target === scrim) close(); };
+  scrim.querySelector("#save").onclick = async () => {
+    const surah = +scrim.querySelector("#su").value;
+    const from = +scrim.querySelector("#fr").value, to = +scrim.querySelector("#to").value;
+    if (!(to >= from && to <= SURAHS[surah - 1][1])) return toast("تحقق من أرقام الآيات.");
+    const mistakes = scrim.querySelector("#mis").value.split(/[,\u060C\s]+/).map(Number).filter(x => x >= from && x <= to);
+    const k = todayKey();
+    const seg = applyRating({ id: uid(), studentId: sid, surah, from, to, firstDate: k, level: 0, lapses: 0, reviews: 0 }, rating, k);
+    await Store.put("segments", seg);
+    await Store.put("sessions", { id: uid(), studentId: sid, circleId: DB.students.find(x => x.id === sid).circleId,
+      date: k, kind: "new", surah, from, to, rating, mistakes, note: "", by: ME.name });
+    for (const q of scrim.querySelectorAll("[data-seg]")) {
+      const r = q.querySelector("select").value; if (!r) continue;
+      const old = DB.segments.find(s => s.id === q.dataset.seg);
+      const up = applyRating(old, r, k);
+      await Store.put("segments", up);
+      await Store.put("sessions", { id: uid(), studentId: sid, circleId: old.circleId || null, date: k,
+        kind: "review", surah: old.surah, from: old.from, to: old.to, rating: r, mistakes: [], by: ME.name });
+    }
+    close(); toast("سُجّل التسميع."); render();
+  };
+}
+
+function viewStudents(v) {
+  v.innerHTML = `<div class="h" style="margin-bottom:10px">الطلاب</div>` + DB.students.map(s => {
+    const p = paceReport(s.id), due = dueOf(s.id), weak = segsOf(s.id).filter(isWeak);
+    return `<div class="card"><div class="spread">
+      <div><div style="font-weight:700;font-size:16px">${esc(s.name)}</div>
+      <div class="sub num">${ayahsOf(s.id)} آية · ${juzProgress(s.id).filter(j => j.pct > .99).length} جزء مكتمل</div></div>
+      <div class="row" style="gap:6px">
+        ${p.slow ? `<span class="chip warn">تباطؤ</span>` : ""}
+        ${weak.length ? `<span class="chip warn num">${weak.length} ضعيف</span>` : ""}
+        ${due.length ? `<span class="chip num">${due.length} مراجعة</span>` : `<span class="chip good">منتظم</span>`}
+      </div></div>${barsHTML(p)}</div>`;
+  }).join("");
+}
+
+function viewTeacherReport(v) {
+  const kids = DB.students;
+  const slow = kids.filter(s => paceReport(s.id).slow);
+  const late = kids.map(s => ({ s, n: dueOf(s.id).filter(x => overdueDays(x) > 7).length })).filter(x => x.n);
+  v.innerHTML = `
+    <div class="card"><div class="h">ما يحتاج انتباهك</div>
+      <div class="sub" style="margin-bottom:10px">مبني على معدل كل طفل مقارنةً بنفسه في الأسابيع الماضية، لا بزملائه.</div>
+      ${slow.length ? slow.map(s => `<div class="seg"><div><div class="t">${esc(s.name)}</div>
+        <div class="d">معدل آخر ثلاثة أسابيع أقل من نصف متوسطه المعتاد</div></div>
+        <span class="chip warn r">تباطؤ</span></div>`).join("") : `<div class="sub">لا أحد متباطئ هذا الأسبوع.</div>`}
+      ${late.map(x => `<div class="seg"><div><div class="t">${esc(x.s.name)}</div>
+        <div class="d num">${x.n} مقطع تأخرت مراجعته أكثر من أسبوع</div></div>
+        <span class="chip warn r">مراجعة</span></div>`).join("")}
+    </div>
+    <div class="card"><div class="h">مواضع الخطأ المتكررة</div>
+      <div class="sub" style="margin-bottom:8px">آيات تعثّر فيها الطفل مرتين فأكثر — غالباً متشابهات.</div>
+      ${kids.map(s => { const h = mistakeHotspots(s.id); return h.length ? `<div class="seg">
+        <div><div class="t">${esc(s.name)}</div><div class="d">${h.map(x => `${x.label} (${x.n})`).join(" · ")}</div></div></div>` : ""; }).join("")
+        || `<div class="sub">لا تكرار ملحوظ بعد.</div>`}
+    </div>`;
+}
+
+function shareSummary(kids) {
+  const lines = kids.map(s => {
+    const p = paceReport(s.id), due = dueOf(s.id).length;
+    return `• ${s.name}: ${p.now} آية هذا الأسبوع، إجمالي ${ayahsOf(s.id)} آية` +
+      (due ? `، ${due} مقطع بحاجة مراجعة` : "، المراجعة منتظمة") + (p.slow ? " — معدله نزل عن المعتاد" : "");
+  });
+  const text = `ملخص الحلقة — ${fmtDate(todayKey())}\n\n${lines.join("\n")}\n\nوفقكم الله.`;
+  window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+}
+
+/* ===================== مكوّنات مشتركة ===================== */
+function ribbonHTML(sid) {
+  const j = juzProgress(sid);
+  return `<div class="ribbon">${j.map(x => `<div class="jz ${x.pct > .99 ? "full" : ""} ${x.due ? "due" : ""}" title="الجزء ${x.juz}">
+    <i data-h="${Math.round(x.pct * 100)}"></i><b class="num">${x.juz}</b></div>`).join("")}</div>
+    <div class="legend">
+      <span><i style="background:var(--verd)"></i>محفوظ</span>
+      <span><i style="background:var(--sunk);border:1px solid var(--line)"></i>لم يُبدأ</span>
+      <span><i style="background:var(--alert)"></i>فيه مراجعة مستحقة</span>
+    </div>`;
+}
+function barsHTML(p) {
+  const max = Math.max(...p.weeks, 1);
+  return `<div class="bars">${p.weeks.map((w, i) => `<div class="${i === 7 ? "now" : ""}" style="height:${Math.max(3, w / max * 100)}%" title="${w} آية"></div>`).join("")}</div>
+    <div class="barlabels"><span>قبل ٨ أسابيع</span><span></span><span></span><span></span><span></span><span></span><span></span><span>هذا الأسبوع</span></div>
+    <div class="sub num" style="margin-top:6px">${p.now} آية هذا الأسبوع · متوسطه المعتاد ${Math.round(p.avg)} آية في الأسبوع</div>`;
+}
+const myKids = () => ME.role === "parent" ? DB.students.filter(s => (ME.studentIds || []).includes(s.id)) : DB.students;
+
+/* ===================== واجهة ولي الأمر ===================== */
+function viewParentHome(v) {
+  v.innerHTML = myKids().map(s => {
+    const p = paceReport(s.id), due = dueOf(s.id), weak = segsOf(s.id).filter(isWeak);
+    const juzDone = juzProgress(s.id).filter(j => j.pct > .99).length;
+    return `<div class="card">
+      <div class="spread"><div class="h">${esc(s.name)}</div>
+        ${p.slow ? `<span class="chip warn">معدله نزل</span>` : `<span class="chip good">ماضٍ على معدله</span>`}</div>
+      ${ribbonHTML(s.id)}
+      <div class="stats">
+        <div class="stat"><div class="v num">${ayahsOf(s.id)}</div><div class="k">آية محفوظة</div></div>
+        <div class="stat"><div class="v num">${juzDone}</div><div class="k">جزء مكتمل</div></div>
+        <div class="stat"><div class="v num" style="color:${due.length ? "var(--alert)" : "inherit"}">${due.length}</div><div class="k">بحاجة مراجعة</div></div>
+      </div>
+      ${barsHTML(p)}
+      ${weak.length ? `<div class="sub" style="color:var(--alert);margin-top:6px">${weak.length} مقطع تكرر فيه الإخفاق أو تأخر كثيراً — تجده في تبويب المراجعة.</div>` : ""}
+    </div>`;
+  }).join("") || `<div class="empty"><div class="h">لا يوجد أبناء مرتبطون</div><div class="sub">اطلب رمز الربط من المعلمة.</div></div>`;
+  requestAnimationFrame(() => v.querySelectorAll(".jz i").forEach(i => { i.style.height = i.dataset.h + "%"; }));
+}
+
+function fillRibbons(v) { requestAnimationFrame(() => v.querySelectorAll(".jz i").forEach(i => { i.style.height = i.dataset.h + "%"; })); }
+function viewParentReview(v) {
+  v.innerHTML = myKids().map(s => {
+    const due = dueOf(s.id).slice(0, 12), hot = mistakeHotspots(s.id);
+    return `<div class="card"><div class="h">${esc(s.name)}</div>
+      <div class="sub" style="margin-bottom:6px">ما ينبغي أن يراجعه اليوم أو تأخّر عن موعده</div>
+      ${due.length ? due.map(x => `<div class="seg">
+        <div><div class="t">${segTitle(x)}</div>
+          <div class="d">آخر مراجعة ${ago(x.lastReview)}${(x.lapses || 0) >= 2 ? " · أخفق فيه مرتين فأكثر" : ""}</div></div>
+        <div class="r">${overdueDays(x) ? `<span class="chip warn num">متأخر ${overdueDays(x)} يوم</span>` : `<span class="chip">اليوم</span>`}</div>
+      </div>`).join("") : `<div class="sub">كل المقاطع ضمن مواعيدها.</div>`}
+      ${hot.length ? `<div class="sep"></div><div class="sub"><b style="color:var(--ink)">مواضع يتكرر فيها الخطأ:</b> ${hot.map(x => `${x.label} (${x.n})`).join(" · ")}</div>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function viewParentLog(v) {
+  const rows = myKids().flatMap(s => sessOf(s.id).slice(0, 20).map(x => ({ ...x, who: s.name })))
+    .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 40);
+  const RT = { excellent: ["متقن", "good"], good: ["جيد", ""], repeat: ["يحتاج إعادة", "warn"] };
+  const rt = r => RT[r] || ["—", ""];
+  v.innerHTML = `<div class="card"><div class="h">آخر الجلسات</div>
+    ${rows.map(r => `<div class="seg">
+      <div><div class="t">${segTitle(r)}</div>
+        <div class="d">${esc(r.who)} · ${r.kind === "new" ? "حفظ جديد" : "مراجعة"} · ${fmtDate(r.date)}${r.mistakes?.length ? ` · تعثّر في ${r.mistakes.join("، ")}` : ""}</div></div>
+      <div class="r"><span class="chip ${rt(r.rating)[1]}">${rt(r.rating)[0]}</span></div>
+    </div>`).join("") || `<div class="sub">لا جلسات بعد.</div>`}</div>`;
+}
+
+/* ===================== واجهة الإدارة ===================== */
+function viewCircles(v) {
+  v.innerHTML = `
+    <div class="card"><div class="h">حلقة جديدة</div>
+      <label class="field" style="margin-top:8px"><span>الاسم</span><input id="cn" placeholder="حلقة المسجد — بعد العصر"></label>
+      <label class="field"><span>معرّف حساب المعلمة (uid)</span><input id="ct" placeholder="يُنسخ من تبويب الحسابات"></label>
+      <button class="btn full" id="addc">إضافة الحلقة</button></div>
+    ${DB.circles.map(c => `<div class="card">
+      <div class="spread"><div><div class="h">${esc(c.name)}</div>
+        <div class="sub">${esc(c.teacherName || c.teacherUid || "بلا معلمة")} · ${studentsIn(c.id).length} طالب</div></div></div>
+      <div class="sep"></div>
+      ${studentsIn(c.id).map(s => `<div class="seg"><div><div class="t">${esc(s.name)}</div>
+        <div class="d num">${ayahsOf(s.id)} آية</div></div>
+        <div class="r"><button class="linkbtn" data-inv="${s.id}">رمز ربط لولي الأمر</button></div></div>`).join("")}
+      <div class="row" style="margin-top:10px">
+        <input id="sn-${c.id}" placeholder="اسم طالب جديد" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:9px">
+        <button class="btn ghost" data-adds="${c.id}">إضافة</button></div>
+    </div>`).join("")}`;
+  v.querySelector("#addc").onclick = async () => {
+    const n = v.querySelector("#cn").value.trim(); if (!n) return toast("اكتب اسم الحلقة.");
+    await Store.put("circles", { id: uid(), name: n, teacherUid: v.querySelector("#ct").value.trim() || null, teacherName: "" });
+    render();
+  };
+  v.querySelectorAll("[data-adds]").forEach(b => b.onclick = async () => {
+    const inp = v.querySelector("#sn-" + b.dataset.adds), n = inp.value.trim(); if (!n) return;
+    await Store.put("students", { id: uid(), name: n, circleId: b.dataset.adds, parentUids: [], active: true });
+    render();
+  });
+  v.querySelectorAll("[data-inv]").forEach(b => b.onclick = async () => {
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+    await Store.put("invites", { id: code, role: "parent", studentIds: [b.dataset.inv], used: false });
+    toast("رمز الربط: " + code);
+  });
+}
+
+function viewPeople(v) {
+  v.innerHTML = `<div class="card"><div class="h">الحسابات</div>
+    ${DB.users.map(u => `<div class="seg"><div><div class="t">${esc(u.name)}</div>
+      <div class="d">${{ teacher: "معلمة", parent: "ولي أمر", admin: "إدارة" }[u.role]} · ${u.id}</div></div></div>`).join("")
+    || `<div class="sub">تُنشأ الحسابات عبر رموز الدعوة.</div>`}
+    </div>
+    <div class="card"><div class="h">رموز الدعوة</div>
+      ${DB.invites.map(i => `<div class="seg"><div><div class="t num">${i.id}</div>
+        <div class="d">${i.role === "parent" ? "ولي أمر" : "معلمة"} · ${i.used ? "مستخدم" : "صالح"}</div></div></div>`).join("")
+      || `<div class="sub">أنشئ رمزاً من تبويب الحلقات بجانب اسم الطالب.</div>`}
+    </div>`;
+}
+
+boot();
+
+</script>
+</body>
+</html>
